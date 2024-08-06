@@ -83,16 +83,19 @@ check_eth_tx_queue_size_large_llq() {
     return
   fi
 
+  ((recommended_fail += 1))
+  echo_warn "$interface TX queue size is not at maximum of ${TX_QUEUE_SIZE_RECOMMENDED}, currently set to ${tx_queue_size}"
+  echo_fix "sudo ${ethtool} -G ${interface} tx ${TX_QUEUE_SIZE_RECOMMENDED}"
+
   if test -f "${large_llq_param_path}"; then
     case "$(<"${large_llq_param_path}")" in
       0)
-        echo_success "Large LLQ is explicitly disabled via module param (good)"
         ;;
       *)
         echo_warn "Large LLQ is not explicitly disabled via module parameter"
         ((recommended_fail += 1))
-        echo "Consider disabling large LLQ for optimal ENA Express performance"
-        echo_fix "sudo sh -c 'rmmod ena && modprobe ena force_large_llq_header=0'"
+        echo "If you are unable to modify the TX queue size to the recommended size, disable large LLQ first and try again"
+	echo_fix "sudo sh -c 'rmmod ena && modprobe ena force_large_llq_header=0'"
         echo
         echo "More details about large LLQ are available here:"
         echo " https://github.com/amzn/amzn-drivers/blob/master/kernel/linux/ena/ENA_Linux_Best_Practices.rst"
@@ -101,10 +104,6 @@ check_eth_tx_queue_size_large_llq() {
         ;;
     esac
   fi
-
-  ((recommended_fail += 1))
-  echo_warn "$interface TX queue size is not at maximum of ${TX_QUEUE_SIZE_RECOMMENDED}, currently set to ${tx_queue_size}"
-  echo_fix "sudo ${ethtool} -G ${interface} tx ${TX_QUEUE_SIZE_RECOMMENDED}"
 }
 
 check_bql_enable() {
